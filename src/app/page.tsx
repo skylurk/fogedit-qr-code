@@ -47,7 +47,7 @@ const FAQS = [
   },
   {
     q: "Do you track scans or store my data?",
-    a: "No. QR codes and logos are created entirely in your browser and never uploaded. Codes you save are kept on your own device. Because there's no redirect, we never see when your code is scanned.",
+    a: "No. QR codes and logos are created entirely in your browser and never uploaded. Codes you save are kept on your own device. Because there's no redirect, we never see when your code is scanned. We only count page visits, anonymously and without cookies, to know how many people use the site.",
   },
 ];
 

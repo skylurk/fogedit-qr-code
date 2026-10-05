@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import { APP_NAME, SEO_DESCRIPTION, SEO_TITLE, SITE_URL } from "@/lib/brand";
 import "./globals.css";
 
@@ -96,11 +97,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-5 text-xs text-muted">
             <p>
               {APP_NAME} is a free QR code generator. Codes are made in your browser and point straight to your link, so
-              they never expire. No accounts, no tracking, no redirects.
+              they never expire. No accounts and no redirects, and we never track your QR code scans.
             </p>
             <p>© {new Date().getFullYear()} Fogedit</p>
           </div>
         </footer>
+        {/* Cookieless page-view counts only. Enable in Vercel → project → Analytics. */}
+        <Analytics />
       </body>
     </html>
   );
