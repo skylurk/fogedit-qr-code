@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { normalizeDesign, renderQr } from "@/lib/qr/design";
+import { PAYLOAD_TYPES, payloadFromSaved, summarizePayload } from "@/lib/qr/payload";
 import { download, exportPng, exportSvg, safeFilename } from "@/lib/qr/export";
 import { exportLibrary, importLibrary, indexedDbRepository as repo } from "@/lib/storage/indexeddb";
 import type { SavedQr } from "@/lib/storage/types";
@@ -98,7 +99,11 @@ function LibraryCard({ item, onDelete }: { item: SavedQr; onDelete: () => void }
   } catch {
     rendered = null;
   }
-  const filename = safeFilename(item.name || design.content);
+  const payload = payloadFromSaved(design.payload, design.content);
+  const typeLabel = PAYLOAD_TYPES.find((t) => t.value === payload.type)?.label ?? "Website";
+  const filename = safeFilename(item.name || summarizePayload(payload));
+  // Only link real web addresses (imported backups could contain anything).
+  const isWebLink = payload.type === "url" && /^https?:\/\//i.test(design.content);
 
   return (
     <li className="flex flex-col rounded-xl border border-line bg-surface p-4">
@@ -113,14 +118,20 @@ function LibraryCard({ item, onDelete }: { item: SavedQr; onDelete: () => void }
         )}
       </div>
       <h2 className="truncate font-semibold">{item.name}</h2>
-      <a
-        href={design.content}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="truncate font-mono text-xs text-muted hover:text-ink hover:underline"
-      >
-        {design.content}
-      </a>
+      {isWebLink ? (
+        <a
+          href={design.content}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="truncate font-mono text-xs text-muted hover:text-ink hover:underline"
+        >
+          {design.content}
+        </a>
+      ) : (
+        <p className="truncate text-xs text-muted">
+          <span className="font-medium text-ink">{typeLabel}</span> · {summarizePayload(payload)}
+        </p>
+      )}
       {item.description && <p className="mt-1.5 line-clamp-2 text-sm text-muted">{item.description}</p>}
       <p className="mt-1.5 text-xs text-muted">
         Created {new Date(item.createdAt).toLocaleDateString(undefined, { dateStyle: "medium" })}

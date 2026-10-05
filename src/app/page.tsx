@@ -3,8 +3,8 @@ import { APP_NAME, SEO_DESCRIPTION, SITE_URL } from "@/lib/brand";
 
 const STEPS = [
   [
-    "Paste your link",
-    "Enter the web address you want people to open. We check it and show exactly what goes into the code.",
+    "Add your content",
+    "Paste a link, or enter Wi-Fi details, a contact card, email, SMS, phone number or text. We check it and show exactly what goes into the code.",
   ],
   [
     "Make it yours",
@@ -28,6 +28,10 @@ const FAQS = [
   {
     q: "What's the difference between a static and a dynamic QR code?",
     a: "A dynamic QR code points to the provider's short link, which then redirects to your site. That lets the provider change the destination and count scans, but the code stops working if the service shuts down or your plan ends. A static QR code contains your actual URL, so it can't be switched off. To change where it goes, you make a new code.",
+  },
+  {
+    q: "What can I put in a QR code?",
+    a: "Website links, Wi-Fi logins (guests scan to join), contact cards (vCard) that save straight to the phone's contacts, pre-filled emails and text messages, phone numbers to call, and plain text.",
   },
   {
     q: "Can I add my logo to a QR code?",
@@ -62,6 +66,7 @@ const jsonLd = {
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       featureList: [
         "Static QR codes that never expire",
+        "Website, Wi-Fi, vCard contact, email, SMS, phone and text QR codes",
         "Custom colours, gradients, dot and corner styles",
         "Logo upload",
         "Frames and branded QR cards",
@@ -92,8 +97,8 @@ export default function Home() {
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Free QR Code Generator</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted">
-          Create permanent QR codes for any link, with your logo, colours and frame. No sign-up, no expiry and no
-          tracking. Download SVG, PNG, PDF or EPS.
+          Create permanent QR codes for websites, Wi-Fi, contact cards, email, SMS, phone numbers and text, with your
+          logo, colours and frame. No sign-up, no expiry and no tracking. Download SVG, PNG, PDF or EPS.
         </p>
       </div>
 

@@ -28,6 +28,8 @@ previews; without it they point at localhost.
 ## Features
 
 - URL validation (adds `https://` if missing) and shows the exact string that gets encoded
+- Content types: website, plain text, Wi-Fi (`WIFI:`), contact (vCard 3.0), email (`mailto:`),
+  SMS (`SMSTO:`) and phone (`tel:`), encoded in `src/lib/qr/payload.ts`
 - Error correction L/M/Q/H, quiet zone, dot styles, corner frame/centre styles
 - Solid, linear and radial gradient colours; separate corner colour; transparent background
 - Logo upload (auto EC H, size capped per EC level, optional dot clearing)

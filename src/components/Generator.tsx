@@ -19,9 +19,19 @@ import {
   type FrameStyle,
   type QrDesign,
 } from "@/lib/qr/types";
-import { checkUrl } from "@/lib/qr/url";
+import {
+  displayEncoded,
+  emptyPayload,
+  encodePayload,
+  PAYLOAD_TYPES,
+  payloadFromSaved,
+  summarizePayload,
+  type Payload,
+  type PayloadType,
+} from "@/lib/qr/payload";
 import { indexedDbRepository as repo } from "@/lib/storage/indexeddb";
 import { ExportPanel } from "./ExportPanel";
+import { PayloadForm } from "./PayloadForm";
 import { Button, ColorInput, Field, inputClass, Panel, Segmented, Slider, Toggle } from "./ui";
 
 const PLACEHOLDER_URL = "https://example.com";
@@ -62,7 +72,15 @@ async function readLogo(file: File): Promise<string> {
 
 export default function Generator() {
   const router = useRouter();
-  const [urlInput, setUrlInput] = useState("");
+  // One draft per content type, so switching tabs doesn't lose what was typed.
+  const [drafts, setDrafts] = useState(
+    () =>
+      Object.fromEntries(PAYLOAD_TYPES.map(({ value }) => [value, emptyPayload(value)])) as Record<
+        PayloadType,
+        Payload
+      >,
+  );
+  const [activeType, setActiveType] = useState<PayloadType>("url");
   const [design, setDesign] = useState<QrDesign>(DEFAULT_DESIGN);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -82,17 +100,22 @@ export default function Generator() {
     if (!id) return;
     repo.get(id).then((item) => {
       if (!item) return;
+      const payload = payloadFromSaved(item.design.payload, item.design.content);
       setDesign(normalizeDesign(item.design));
-      setUrlInput(item.design.content);
+      setDrafts((d) => ({ ...d, [payload.type]: payload }));
+      setActiveType(payload.type);
       setDescription(item.description);
       setSavedId(editId ? item.id : null);
       setName(editId ? item.name : `${item.name} (copy)`);
     });
   }, []);
 
-  const urlCheck = useMemo(() => checkUrl(urlInput), [urlInput]);
-  const isPlaceholder = !urlCheck.ok;
-  const content = urlCheck.ok ? urlCheck.url : PLACEHOLDER_URL;
+  const payload = drafts[activeType];
+  const setPayload = (p: Payload) => setDrafts((d) => ({ ...d, [p.type]: p }));
+  const encoded = useMemo(() => encodePayload(payload), [payload]);
+  const isPlaceholder = !encoded.ok;
+  const content = encoded.ok ? encoded.text : PLACEHOLDER_URL;
+  const summary = summarizePayload(payload);
   const fullDesign = useMemo(() => ({ ...design, content }), [design, content]);
   const { result, error } = useRenderedQr(fullDesign, content);
   const warnings = useMemo(() => designWarnings(fullDesign), [fullDesign]);
@@ -161,54 +184,60 @@ export default function Generator() {
   const makePrintReady = () => setDesign((d) => ({ ...d, ecLevel: "H", margin: Math.max(4, d.margin) }));
 
   const save = async (asNew: boolean) => {
-    if (!urlCheck.ok) return;
+    if (!encoded.ok) return;
     const now = new Date().toISOString();
     const existing = !asNew && savedId ? await repo.get(savedId) : undefined;
     const id = existing?.id ?? crypto.randomUUID();
     await repo.save({
       id,
-      name: name.trim() || new URL(urlCheck.url).hostname,
+      name: name.trim() || summary,
       description: description.trim(),
-      design: { ...design, content: urlCheck.url },
+      design: { ...design, content: encoded.text, payload },
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     });
     setSavedId(id);
-    if (!name.trim()) setName(new URL(urlCheck.url).hostname);
+    if (!name.trim()) setName(summary);
     router.replace(`/?id=${id}`, { scroll: false });
     setToast(existing ? "Changes saved" : "Saved to My codes");
   };
 
-  const filename = urlCheck.ok ? safeFilename(name || urlCheck.url) : "qr-code";
+  const filename = encoded.ok ? safeFilename(name || summary) : "qr-code";
   const printReady = design.ecLevel === "H" && design.margin >= 4;
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
-      {/* URL */}
-      <section className="rounded-xl border border-line bg-surface p-4 max-lg:order-1 lg:col-start-1 lg:row-start-1">
-        <label htmlFor="url" className="mb-2 block text-sm font-semibold">
-          Website URL
-        </label>
-        <input
-          id="url"
-          type="url"
-          inputMode="url"
-          autoComplete="url"
-          spellCheck={false}
-          placeholder="https://example.com/contact"
-          value={urlInput}
-          onChange={(e) => setUrlInput(e.target.value)}
-          className={`${inputClass} py-3 text-base`}
-          autoFocus
+      {/* Content */}
+      <section
+        aria-label="QR code content"
+        className="space-y-4 rounded-xl border border-line bg-surface p-4 max-lg:order-1 lg:col-start-1 lg:row-start-1"
+      >
+        <Segmented<PayloadType>
+          label="Content type"
+          value={activeType}
+          onChange={setActiveType}
+          options={PAYLOAD_TYPES}
         />
-        <div className="mt-2 min-h-5 text-xs">
-          {urlInput && !urlCheck.ok && <span className="text-red-600">{urlCheck.error}</span>}
-          {urlCheck.ok && (
-            <span className="text-muted">
-              Encodes exactly <span className="font-mono text-ink break-all">{urlCheck.url}</span>
-              {urlCheck.note && <span className="text-amber-700"> · {urlCheck.note}</span>}
-            </span>
-          )}
+        <PayloadForm value={payload} onChange={setPayload} />
+        <div className="min-h-5 text-xs">
+          {!encoded.ok && encoded.error && <span className="text-red-600">{encoded.error}</span>}
+          {encoded.ok &&
+            (payload.type === "url" ? (
+              <span className="text-muted">
+                Encodes exactly <span className="font-mono break-all text-ink">{encoded.text}</span>
+                {encoded.note && <span className="text-amber-700"> · {encoded.note}</span>}
+              </span>
+            ) : (
+              <details className="text-muted">
+                <summary className="cursor-pointer">
+                  Encodes {encoded.text.length} characters
+                  {encoded.note && <span className="text-amber-700"> · {encoded.note}</span>}
+                </summary>
+                <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-canvas p-2 font-mono break-all whitespace-pre-wrap text-ink">
+                  {displayEncoded(payload, encoded.text)}
+                </pre>
+              </details>
+            ))}
         </div>
       </section>
 
@@ -232,7 +261,7 @@ export default function Generator() {
             )}
             {isPlaceholder && result && (
               <p className="absolute rounded-full bg-white px-3 py-1.5 text-sm font-medium shadow-sm">
-                Enter a URL to create your code
+                Fill in the details to create your code
               </p>
             )}
           </div>
@@ -292,7 +321,7 @@ export default function Generator() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={urlCheck.ok ? new URL(urlCheck.url).hostname : "e.g. Shop window poster"}
+                placeholder={encoded.ok ? summary : "e.g. Shop window poster"}
                 className={inputClass}
               />
             </Field>
@@ -305,11 +334,11 @@ export default function Generator() {
               />
             </Field>
             <div className="flex gap-2">
-              <Button variant="primary" disabled={!urlCheck.ok} onClick={() => save(false)} className="flex-1">
+              <Button variant="primary" disabled={!encoded.ok} onClick={() => save(false)} className="flex-1">
                 {savedId ? "Save changes" : "Save"}
               </Button>
               {savedId && (
-                <Button disabled={!urlCheck.ok} onClick={() => save(true)}>
+                <Button disabled={!encoded.ok} onClick={() => save(true)}>
                   Save as new
                 </Button>
               )}

@@ -1,3 +1,5 @@
+import type { Payload } from "./payload";
+
 export type EcLevel = "L" | "M" | "Q" | "H";
 
 export type DotStyle = "square" | "rounded" | "dots" | "classy" | "diamond";
@@ -31,7 +33,10 @@ export interface LogoOptions {
 }
 
 export interface QrDesign {
+  /** The exact text encoded in the code. */
   content: string;
+  /** The form the content was made from (absent on older saved codes = URL). */
+  payload?: Payload;
   ecLevel: EcLevel;
   fg: Fill;
   /** Optional separate colour for the three corner eyes; null = use fg. */

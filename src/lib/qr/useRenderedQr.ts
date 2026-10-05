@@ -9,7 +9,10 @@ export function useRenderedQr(design: QrDesign, content: string) {
     try {
       return { result: renderQr(design, content), error: null };
     } catch {
-      return { result: null, error: "This URL is too long to fit in a QR code at this error-correction level." };
+      return {
+        result: null,
+        error: "This is too much content for a QR code at this error-correction level. Shorten it or lower the level.",
+      };
     }
   }, [design, content]);
 }

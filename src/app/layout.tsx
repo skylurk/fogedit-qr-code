@@ -33,6 +33,11 @@ export const metadata: Metadata = {
     "SVG QR code",
     "custom QR code",
     "no sign up QR code",
+    "WiFi QR code generator",
+    "vCard QR code",
+    "contact QR code",
+    "email QR code",
+    "SMS QR code",
   ],
   alternates: { canonical: "/" },
   openGraph: {

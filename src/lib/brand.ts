@@ -9,4 +9,4 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3
 
 export const SEO_TITLE = "Free QR Code Generator – No Sign-Up, Never Expires";
 export const SEO_DESCRIPTION =
-  "Create free QR codes that never expire. Add your logo, colours and frames, then download SVG, PNG, PDF or EPS. No sign-up, no tracking, no redirects.";
+  "Free QR codes for links, Wi-Fi, contacts, email, SMS and more. Add your logo and colours, download SVG, PNG, PDF or EPS. Never expire, no sign-up.";
